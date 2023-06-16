@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import rotaUsuario from "./rotas/usuarios";
+import passport from "passport";
 
 const app = express();
 
@@ -10,6 +11,7 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use("/usuarios", rotaUsuario);
 
+app.use(passport.initialize());
 const server = createServer(app);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

@@ -3,6 +3,8 @@ import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { Usuario } from "../modelos/Usuario";
 import * as bcrypt from "bcrypt";
+import { authLocal } from "../services/autenticacao";
+import passport from "passport";
 
 const rotaUsuario = Router();
 
@@ -37,6 +39,21 @@ rotaUsuario.post("/", async (req: Request, res: Response) => {
     return res.status(400).json({ mensagem: "erro ao criar usuário" });
   }
 });
+
+rotaUsuario.post(
+  "/login",
+  authLocal,
+  async (req: Request, res: Response, next) => {
+    try {
+      res.status(200).json(req.user);
+      return next();
+    } catch (error) {
+      console.log(error);
+
+      res.status(500).json({ mensagem: "ocorreu um erro" });
+    }
+  }
+);
 
 rotaUsuario.get("/:username", async (req: Request, res: Response) => {
   try {
