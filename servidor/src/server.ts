@@ -1,8 +1,14 @@
 import express, { Request, Response } from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import rotaUsuario from "./rotas/usuarios";
 
 const app = express();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+app.use("/usuarios", rotaUsuario);
 
 const server = createServer(app);
 
