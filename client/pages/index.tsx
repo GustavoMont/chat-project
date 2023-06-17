@@ -1,6 +1,8 @@
 import { Inter } from "next/font/google";
 import { useEffect, useState } from "react";
 import { socket } from "@/services/socket";
+import { GetServerSideProps } from "next";
+import { getToken } from "@/services/auth";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -42,3 +44,22 @@ export default function Home() {
     </main>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const token = getToken(ctx);
+  console.log(token);
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: true,
+      },
+      props: {},
+    };
+  }
+
+  return {
+    props: {},
+  };
+};
