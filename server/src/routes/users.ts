@@ -24,7 +24,7 @@ userRoutes.post("/", async (req, res: Response) => {
       username: body.username,
       password: await bcrypt.hash(body.password || "", 10),
     });
-    return res.status(201).json({ mensagem: `usuário ${docRef.id} criado` });
+    return res.status(201).json({ access: createJwt(docRef.id) });
   } catch (e) {
     console.log(e);
 
