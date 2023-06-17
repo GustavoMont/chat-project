@@ -3,8 +3,9 @@ import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { Usuario } from "../modelos/Usuario";
 import * as bcrypt from "bcrypt";
-import { authLocal } from "../services/autenticacao";
+import { authJwt, authLocal } from "../services/autenticacao";
 import passport from "passport";
+import { createJwt } from "../services/usuarios-servicos";
 
 const rotaUsuario = Router();
 
@@ -20,7 +21,7 @@ const mostrarUsuarioPeloUsername = async (username: string) => {
   return usuario;
 };
 
-rotaUsuario.post("/", async (req: Request, res: Response) => {
+rotaUsuario.post("/", async (req, res: Response) => {
   try {
     const body: Usuario = req.body;
     const usuarioExiste = await mostrarUsuarioPeloUsername(body.username);
@@ -45,7 +46,12 @@ rotaUsuario.post(
   authLocal,
   async (req: Request, res: Response, next) => {
     try {
-      res.status(200).json(req.user);
+      const user = req.user;
+      if (user) {
+        res.status(200).json({
+          access: createJwt(user.id),
+        });
+      }
       return next();
     } catch (error) {
       console.log(error);
@@ -54,6 +60,10 @@ rotaUsuario.post(
     }
   }
 );
+
+rotaUsuario.get("/:username/secret", authJwt, async (req, res) => {
+  return res.status(200).json({ secret: "route" });
+});
 
 rotaUsuario.get("/:username", async (req: Request, res: Response) => {
   try {
