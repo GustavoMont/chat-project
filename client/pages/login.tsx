@@ -8,7 +8,7 @@ const Login = () => {
   }
   const { register, handleSubmit } = useForm<Login>();
   const onSubmit = async (data: Login) => {
-    const { data: response } = await api.post("/usuarios/login", data);
+    const { data: response } = await api.post("/users/login", data);
     console.log(response);
   };
 

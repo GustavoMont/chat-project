@@ -39,7 +39,7 @@ const jwtOpcoes = {
 const jwt = new JwtStrategy(jwtOpcoes, async (payload, done) => {
   try {
     //Identify user by ID
-    const userDoc = await getDoc(doc(db, "usuarios", payload.id));
+    const userDoc = await getDoc(doc(db, "users", payload.id));
     const user = userDoc.data() as User;
 
     if (!user) {
