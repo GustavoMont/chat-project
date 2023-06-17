@@ -1,7 +1,7 @@
 import { Request, Response, Router } from "express";
-import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { addDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
-import { User } from "../modelos/User";
+import { User } from "../models/User";
 import * as bcrypt from "bcrypt";
 import { authJwt, authLocal } from "../services/auth";
 import {
@@ -23,6 +23,7 @@ userRoutes.post("/", async (req, res: Response) => {
       name: body.name,
       username: body.username,
       password: await bcrypt.hash(body.password || "", 10),
+      role: body?.role || "aventureiro",
     });
     return res.status(201).json({ access: createJwt(docRef.id) });
   } catch (e) {

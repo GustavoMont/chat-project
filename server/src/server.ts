@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import userRoute from "./routes/users";
 import passport from "passport";
 import cors from "cors";
+import roomsRoute from "./routes/rooms";
 
 const app = express();
 
@@ -12,8 +13,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use("/users", userRoute);
+app.use("/rooms", roomsRoute);
 
 app.use(passport.initialize());
+
 const server = createServer(app);
 
 const io = new Server(server, {

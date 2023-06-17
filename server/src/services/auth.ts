@@ -6,7 +6,8 @@ import * as bcrypt from "bcrypt";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { constants } from "../constants";
-import { User } from "../modelos/User";
+import { User } from "../models/User";
+import { NextFunction, Request, Response } from "express";
 
 const opcoes: IStrategyOptions = {
   usernameField: "username",
@@ -31,6 +32,16 @@ const local = new Strategy(opcoes, async (username, senha, done) => {
     return done(e, false);
   }
 });
+
+export const userHasPermission =
+  (roles: string[]) => (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user;
+    if (!roles.includes(user?.role || "")) {
+      return res.status(403).json({ mensagem: "você não tem permissão" });
+    }
+    return next();
+  };
+
 const jwtOpcoes = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: constants.jwtKey,
