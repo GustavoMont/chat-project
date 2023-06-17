@@ -11,7 +11,6 @@ import { NextFunction, Request, Response } from "express";
 
 const opcoes: IStrategyOptions = {
   usernameField: "username",
-  passwordField: "senha",
   session: false,
 };
 

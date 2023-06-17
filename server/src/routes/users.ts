@@ -27,8 +27,6 @@ userRoutes.post("/", async (req, res: Response) => {
     });
     return res.status(201).json({ access: createJwt(docRef.id) });
   } catch (e) {
-    console.log(e);
-
     return res.status(400).json({ mensagem: "erro ao criar usuário" });
   }
 });
@@ -46,8 +44,6 @@ userRoutes.post(
       }
       return next();
     } catch (error) {
-      console.log(error);
-
       res.status(500).json({ mensagem: "ocorreu um erro" });
     }
   }

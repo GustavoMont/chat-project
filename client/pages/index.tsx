@@ -47,7 +47,6 @@ export default function Home() {
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const token = getToken(ctx);
-  console.log(token);
 
   if (!token) {
     return {
