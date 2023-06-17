@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import rotaUsuario from "./rotas/usuarios";
+import userRoute from "./routes/users";
 import passport from "passport";
 import cors from "cors";
 
@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use("/usuarios", rotaUsuario);
+app.use("/users", userRoute);
 
 app.use(passport.initialize());
 const server = createServer(app);
