@@ -7,38 +7,42 @@ import { serverSideAPi } from "@/services/api";
 import { Room } from "@/models/Room";
 import { RoomCard } from "@/components/Room/RoomCard";
 import { useForm } from "react-hook-form";
+import { ChatBubble } from "@/components/Chat/ChatBubble";
 
 const inter = Inter({ subsets: ["latin"] });
+
+interface Message {
+  text: string;
+  roomId: string;
+  date: Date;
+}
 
 interface Props {
   rooms: Room[];
 }
-
 export default function Home({ rooms }: Props) {
   const [selectedRoom, setSelectedRoom] = useState<Room>();
-  interface Message {
-    text: string;
-    roomId: string;
-    date: Date;
-  }
-  const { register, setValue, handleSubmit, reset } = useForm<Message>();
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  const { register, setValue, handleSubmit, resetField } = useForm<Message>();
 
   const sendMessage = (message: Message) => {
     socket.emit("message", message);
-    reset();
+    resetField("text");
   };
 
   useEffect(() => {
     socket.connect();
 
-    socket.on("message", (data) => {
-      console.log(data);
+    socket.on("message", (newMessage: Message) => {
+      setMessages((messages) => [...messages, newMessage]);
     });
 
     return () => {
       socket.disconnect();
       socket.emit("leave");
       socket.off("message");
+      console.log("AAAAAAAAA");
     };
   }, []);
 
@@ -49,10 +53,11 @@ export default function Home({ rooms }: Props) {
     } else {
       socket.emit("leave");
     }
+    setMessages([]);
   }, [selectedRoom]);
 
   return (
-    <main className="flex p-5 gap-5 h-screen">
+    <main className={`flex p-5 gap-5 h-screen ${inter.className}`}>
       <div className="flex flex-col gap-5 w-1/2 max-h-screen">
         {rooms.map((room) => (
           <RoomCard
@@ -72,11 +77,10 @@ export default function Home({ rooms }: Props) {
               Sair da sala
             </button>
           )}
-          <p className="font-bold text-lg">
-            {selectedRoom
-              ? `Conectado na sala: ${selectedRoom.name}`
-              : "Nenhuma sala conectada"}
-          </p>
+
+          {messages.map((message, i) => (
+            <ChatBubble text={message.text} key={i} />
+          ))}
         </div>
         {selectedRoom && (
           <form
