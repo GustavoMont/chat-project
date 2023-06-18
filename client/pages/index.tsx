@@ -21,10 +21,11 @@ export default function Home({ rooms }: Props) {
     roomId: string;
     date: Date;
   }
-  const { register, setValue, handleSubmit } = useForm<Message>();
+  const { register, setValue, handleSubmit, reset } = useForm<Message>();
 
   const sendMessage = (message: Message) => {
     socket.emit("message", message);
+    reset();
   };
 
   useEffect(() => {
