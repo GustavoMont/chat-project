@@ -6,6 +6,7 @@ import { getToken } from "@/services/auth";
 import { serverSideAPi } from "@/services/api";
 import { Room } from "@/models/Room";
 import { RoomCard } from "@/components/Room/RoomCard";
+import { useForm } from "react-hook-form";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,30 +15,43 @@ interface Props {
 }
 
 export default function Home({ rooms }: Props) {
-  const [isConnected, setIsConnected] = useState(socket.connected);
   const [selectedRoom, setSelectedRoom] = useState<Room>();
-  const connect = () => socket.connect();
-  const disconnect = () => socket.disconnect();
+  interface Message {
+    text: string;
+    roomId: string;
+    date: Date;
+  }
+  const { register, setValue, handleSubmit } = useForm<Message>();
+
+  const sendMessage = (message: Message) => {
+    socket.emit("message", message);
+  };
 
   useEffect(() => {
-    function onConnect() {
-      setIsConnected(true);
-    }
+    socket.connect();
 
-    function onDisconnect() {
-      setIsConnected(false);
-    }
-
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
+    socket.on("message", (data) => {
+      console.log(data);
+    });
 
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
+      socket.disconnect();
+      socket.emit("leave");
+      socket.off("message");
     };
   }, []);
+
+  useEffect(() => {
+    if (selectedRoom) {
+      socket.emit("select_room", selectedRoom.id);
+      setValue("roomId", selectedRoom.id);
+    } else {
+      socket.emit("leave");
+    }
+  }, [selectedRoom]);
+
   return (
-    <main className="flex p-5 gap-5">
+    <main className="flex p-5 gap-5 h-screen">
       <div className="flex flex-col gap-5 w-1/2 max-h-screen">
         {rooms.map((room) => (
           <RoomCard
@@ -47,20 +61,38 @@ export default function Home({ rooms }: Props) {
           />
         ))}
       </div>
-      <div className="flex flex-col gap-5 w-full">
+      <div className="flex flex-wrap w-full h-full">
+        <div className="flex flex-col gap-5 w-full">
+          {selectedRoom && (
+            <button
+              className="btn btn-error"
+              onClick={() => setSelectedRoom(undefined)}
+            >
+              Sair da sala
+            </button>
+          )}
+          <p className="font-bold text-lg">
+            {selectedRoom
+              ? `Conectado na sala: ${selectedRoom.name}`
+              : "Nenhuma sala conectada"}
+          </p>
+        </div>
         {selectedRoom && (
-          <button
-            className="btn btn-error"
-            onClick={() => setSelectedRoom(undefined)}
+          <form
+            onSubmit={handleSubmit(sendMessage)}
+            className="self-end px-5 w-full flex gap-3"
           >
-            Sair da sala
-          </button>
+            <input
+              type="text"
+              placeholder="Type here"
+              className="input input-bordered input-accent w-full "
+              {...register("text")}
+            />
+            <button type="submit" className="btn btn-secondary text-white">
+              Enviar
+            </button>
+          </form>
         )}
-        <p className="font-bold text-lg">
-          {selectedRoom
-            ? `Conectado na sala: ${selectedRoom.name}`
-            : "Nenhuma sala conectada"}
-        </p>
       </div>
     </main>
   );

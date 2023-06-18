@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { createServer } from "http";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import userRoute from "./routes/users";
 import passport from "passport";
 import cors from "cors";
@@ -25,10 +25,32 @@ const io = new Server(server, {
   },
 });
 
+const onLeaveRoom = (room: string, socket: Socket) => {
+  socket.leave(room);
+  console.log(`Usuário ${socket.id} saiu da sala ${room}`);
+};
+
+interface Message {
+  text: string;
+  roomId: string;
+  date: Date;
+}
+
 io.on("connection", (socket) => {
   console.log(`Usuário: ${socket.id} conectado`);
   socket.on("disconnect", () => {
     console.log(`Usuário: ${socket.id} saiu`);
+  });
+  socket.on("select_room", (roomId: string) => {
+    socket.rooms.forEach((room) => onLeaveRoom(room, socket));
+    socket.join(roomId);
+    console.log(`Usuário ${socket.id} entrou na sala ${roomId}`);
+  });
+  socket.on("leave", () => {
+    socket.rooms.forEach((room) => onLeaveRoom(room, socket));
+  });
+  socket.on("message", (message: Message) => {
+    io.to(message.roomId).emit("message", message);
   });
 });
 
@@ -37,5 +59,4 @@ io.listen(8000);
 app.get("/", (req: Request, res: Response) => {
   return res.status(200).json({ hello: "World" });
 });
-
 app.listen(8080, () => console.log("Servidor rodando na porta *:8080"));
