@@ -15,16 +15,23 @@ interface Message {
   text: string;
   roomId: string;
   date: Date;
+  user: User;
 }
 
 interface Props {
   rooms: Room[];
+  currentUser: User;
 }
-export default function Home({ rooms }: Props) {
+
+export default function Home({ rooms, currentUser }: Props) {
   const [selectedRoom, setSelectedRoom] = useState<Room>();
   const [messages, setMessages] = useState<Message[]>([]);
 
-  const { register, setValue, handleSubmit, resetField } = useForm<Message>();
+  const { register, setValue, handleSubmit, resetField } = useForm<Message>({
+    defaultValues: {
+      user: currentUser,
+    },
+  });
 
   const sendMessage = (message: Message) => {
     socket.emit("message", message);
@@ -42,7 +49,6 @@ export default function Home({ rooms }: Props) {
       socket.disconnect();
       socket.emit("leave");
       socket.off("message");
-      console.log("AAAAAAAAA");
     };
   }, []);
 
@@ -67,36 +73,55 @@ export default function Home({ rooms }: Props) {
           />
         ))}
       </div>
-      <div className="flex flex-wrap w-full h-full">
-        <div className="flex flex-col gap-5 w-full">
-          {selectedRoom && (
-            <button
-              className="btn btn-error"
-              onClick={() => setSelectedRoom(undefined)}
+      <div
+        className={`flex flex-wrap w-full h-full px-5 py-5 rounded-lg ${
+          selectedRoom ? "" : "justify-center items-center"
+        }`}
+      >
+        {selectedRoom ? (
+          <>
+            <div className="flex flex-col gap-5 w-full">
+              <div className="navbar bg-slate-950 text-white rounded-lg">
+                <a className="btn btn-ghost normal-case text-xl">
+                  {selectedRoom.name}
+                </a>
+                <button
+                  className="btn text-white btn-error ml-auto"
+                  onClick={() => setSelectedRoom(undefined)}
+                >
+                  Sair
+                </button>
+              </div>
+              {messages.map((message, i) => (
+                <ChatBubble
+                  text={message.text}
+                  user={message.user}
+                  key={i}
+                  position={
+                    message.user.id === currentUser.id ? "end" : "start"
+                  }
+                />
+              ))}
+            </div>
+            <form
+              onSubmit={handleSubmit(sendMessage)}
+              className="self-end px-5 w-full flex gap-3"
             >
-              Sair da sala
-            </button>
-          )}
-
-          {messages.map((message, i) => (
-            <ChatBubble text={message.text} key={i} />
-          ))}
-        </div>
-        {selectedRoom && (
-          <form
-            onSubmit={handleSubmit(sendMessage)}
-            className="self-end px-5 w-full flex gap-3"
-          >
-            <input
-              type="text"
-              placeholder="Type here"
-              className="input input-bordered input-accent w-full "
-              {...register("text")}
-            />
-            <button type="submit" className="btn btn-secondary text-white">
-              Enviar
-            </button>
-          </form>
+              <input
+                type="text"
+                placeholder="Type here"
+                className="input input-bordered input-accent w-full "
+                {...register("text")}
+              />
+              <button type="submit" className="btn btn-secondary text-white">
+                Enviar
+              </button>
+            </form>
+          </>
+        ) : (
+          <h2 className="text-center text-lg font-bold text-secondary">
+            Nenhuma sala selecionada
+          </h2>
         )}
       </div>
     </main>
@@ -115,10 +140,12 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     };
   }
   const { data: rooms } = await serverSideAPi(ctx).get<Room[]>("/rooms");
+  const { data: currentUser } = await serverSideAPi(ctx).get<User>("/users/me");
 
   return {
     props: {
       rooms,
+      currentUser,
     },
   };
 };

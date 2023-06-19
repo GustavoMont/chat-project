@@ -26,7 +26,7 @@ const local = new Strategy(opcoes, async (username, senha, done) => {
       return done(null, false);
     }
     user.password = undefined;
-    return done(null, user);
+    return done(null, { ...user, id: user.id });
   } catch (e) {
     return done(e, false);
   }
@@ -56,7 +56,7 @@ const jwt = new JwtStrategy(jwtOpcoes, async (payload, done) => {
       return done(null, false);
     }
     user.password = undefined;
-    return done(null, user);
+    return done(null, { ...user, id: userDoc.id });
   } catch (e) {
     return done(e, false);
   }

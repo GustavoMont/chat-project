@@ -30,10 +30,17 @@ const onLeaveRoom = (room: string, socket: Socket) => {
   console.log(`Usuário ${socket.id} saiu da sala ${room}`);
 };
 
+interface User {
+  id: string;
+  name: string;
+  username: string;
+}
+
 interface Message {
   text: string;
   roomId: string;
   date: Date;
+  user: User;
 }
 
 io.on("connection", (socket) => {

@@ -17,11 +17,10 @@ export const getUserByUsername = async (username: string) => {
   return user;
 };
 
-export const createJwt = (id: string) => {
-  return jwt.sign(
-    {
-      id,
-    },
-    constants.jwtKey
-  );
+interface JwtPayload {
+  id: string;
+}
+
+export const createJwt = (payload: JwtPayload) => {
+  return jwt.sign(payload, constants.jwtKey);
 };

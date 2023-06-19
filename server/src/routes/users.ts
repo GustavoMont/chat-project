@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { addDoc } from "firebase/firestore";
+import { addDoc, doc, getDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { User } from "../models/User";
 import * as bcrypt from "bcrypt";
@@ -25,7 +25,7 @@ userRoutes.post("/", async (req, res: Response) => {
       password: await bcrypt.hash(body.password || "", 10),
       role: body?.role || "aventureiro",
     });
-    return res.status(201).json({ access: createJwt(docRef.id) });
+    return res.status(201).json({ access: createJwt({ id: docRef.id }) });
   } catch (e) {
     return res.status(400).json({ mensagem: "erro ao criar usuário" });
   }
@@ -39,7 +39,7 @@ userRoutes.post(
       const user = req.user;
       if (user) {
         res.status(200).json({
-          access: createJwt(user.id),
+          access: createJwt({ id: user.id }),
         });
       }
       return next();
@@ -49,20 +49,11 @@ userRoutes.post(
   }
 );
 
-userRoutes.get("/:username/secret", authJwt, async (req, res) => {
-  return res.status(200).json({ secret: "route" });
-});
-
-userRoutes.get("/:username", async (req: Request, res: Response) => {
+userRoutes.get("/me", authJwt, async (req, res) => {
   try {
-    const user = await getUserByUsername(req.params.username);
-    if (!user) {
-      return res.status(404).json({ mensagem: "usuário não encontrado" });
-    }
-    user.password = undefined;
-    return res.json({ ...user });
+    return res.json(req.user);
   } catch (error) {
-    return res.status(500).json({ mensagem: "ocorreu um erro" });
+    return res.status(500).json({ message: "Ocorreu um erro" });
   }
 });
 
