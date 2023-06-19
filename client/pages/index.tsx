@@ -119,9 +119,11 @@ export default function Home({ rooms, currentUser }: Props) {
             </form>
           </>
         ) : (
-          <h2 className="text-center text-lg font-bold text-secondary">
-            Nenhuma sala selecionada
-          </h2>
+          <button className="btn btn-primary" disabled>
+            <h2 className="text-center text-lg font-bold text-slate-800">
+              Nenhuma sala selecionada
+            </h2>
+          </button>
         )}
       </div>
     </main>
