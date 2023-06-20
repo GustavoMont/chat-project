@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { addDoc, doc, getDoc } from "firebase/firestore";
+import { addDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { User } from "../models/User";
 import * as bcrypt from "bcrypt";

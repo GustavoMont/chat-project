@@ -1,6 +1,6 @@
 import passport from "passport";
 import { IStrategyOptions, Strategy } from "passport-local";
-import { getUserByUsername } from "./user-services";
+import { getUserById, getUserByUsername } from "./user-services";
 import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
 import * as bcrypt from "bcrypt";
 import { doc, getDoc } from "firebase/firestore";
@@ -49,14 +49,13 @@ const jwtOpcoes = {
 const jwt = new JwtStrategy(jwtOpcoes, async (payload, done) => {
   try {
     //Identify user by ID
-    const userDoc = await getDoc(doc(db, "users", payload.id));
-    const user = userDoc.data() as User;
+    const user = await getUserById(payload.id);
 
     if (!user) {
       return done(null, false);
     }
-    user.password = undefined;
-    return done(null, { ...user, id: userDoc.id });
+
+    return done(null, user);
   } catch (e) {
     return done(e, false);
   }

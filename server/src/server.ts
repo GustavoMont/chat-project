@@ -5,6 +5,9 @@ import userRoute from "./routes/users";
 import passport from "passport";
 import cors from "cors";
 import roomsRoute from "./routes/rooms";
+import { Message } from "./models/Message";
+import { addDoc } from "firebase/firestore";
+import { getRoomMessages, messagesRef } from "./services/message-services";
 
 const app = express();
 
@@ -36,28 +39,34 @@ interface User {
   username: string;
 }
 
-interface Message {
-  text: string;
-  roomId: string;
-  date: Date;
-  user: User;
-}
-
 io.on("connection", (socket) => {
   console.log(`Usuário: ${socket.id} conectado`);
   socket.on("disconnect", () => {
     console.log(`Usuário: ${socket.id} saiu`);
   });
-  socket.on("select_room", (roomId: string) => {
-    socket.rooms.forEach((room) => onLeaveRoom(room, socket));
-    socket.join(roomId);
-    console.log(`Usuário ${socket.id} entrou na sala ${roomId}`);
-  });
+  socket.on(
+    "select_room",
+    async (roomId: string, callback: (messages: unknown) => {}) => {
+      socket.rooms.forEach((room) => onLeaveRoom(room, socket));
+      socket.join(roomId);
+      const messages = await getRoomMessages(roomId);
+      callback(messages);
+    }
+  );
   socket.on("leave", () => {
     socket.rooms.forEach((room) => onLeaveRoom(room, socket));
   });
-  socket.on("message", (message: Message) => {
-    io.to(message.roomId).emit("message", message);
+  socket.on("message", async (message: Message) => {
+    const messageDoc = await addDoc(messagesRef, {
+      userId: message.user.id,
+      text: message.text,
+      date: new Date(),
+      targetId: message.targetId,
+    });
+    io.to(message.targetId).emit("message", {
+      id: messageDoc.id,
+      ...message,
+    });
   });
 });
 

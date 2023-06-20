@@ -13,7 +13,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 interface Message {
   text: string;
-  roomId: string;
+  targetId: string;
   date: Date;
   user: User;
 }
@@ -54,8 +54,10 @@ export default function Home({ rooms, currentUser }: Props) {
 
   useEffect(() => {
     if (selectedRoom) {
-      socket.emit("select_room", selectedRoom.id);
-      setValue("roomId", selectedRoom.id);
+      socket.emit("select_room", selectedRoom.id, (messages: Message[]) => {
+        setMessages(messages);
+      });
+      setValue("targetId", selectedRoom.id);
     } else {
       socket.emit("leave");
     }
