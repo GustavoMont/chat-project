@@ -1,5 +1,5 @@
 import { Inter } from "next/font/google";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { socket } from "@/services/socket";
 import { GetServerSideProps } from "next";
 import { getToken } from "@/services/auth";
@@ -26,6 +26,7 @@ interface Props {
 export default function Home({ rooms, currentUser }: Props) {
   const [selectedRoom, setSelectedRoom] = useState<Room>();
   const [messages, setMessages] = useState<Message[]>([]);
+  const socketRef = useRef(socket);
 
   const { register, setValue, handleSubmit, resetField } = useForm<Message>({
     defaultValues: {
@@ -39,16 +40,19 @@ export default function Home({ rooms, currentUser }: Props) {
   };
 
   useEffect(() => {
-    socket.connect();
-
-    socket.on("message", (newMessage: Message) => {
+    socketRef.current.connect();
+    socketRef.current.emit("turn_online", currentUser);
+    socketRef.current.on("message", (newMessage: Message) => {
       setMessages((messages) => [...messages, newMessage]);
+    });
+    socketRef.current.on("get_users", (users) => {
+      console.log(users);
     });
 
     return () => {
-      socket.disconnect();
-      socket.emit("leave");
-      socket.off("message");
+      socketRef.current.disconnect();
+      socketRef.current.emit("leave");
+      socketRef.current.off("message");
     };
   }, []);
 

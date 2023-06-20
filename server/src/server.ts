@@ -8,6 +8,7 @@ import roomsRoute from "./routes/rooms";
 import { Message } from "./models/Message";
 import { addDoc } from "firebase/firestore";
 import { getRoomMessages, messagesRef } from "./services/message-services";
+import { User } from "./models/User";
 
 const app = express();
 
@@ -32,17 +33,26 @@ const onLeaveRoom = (room: string, socket: Socket) => {
   socket.leave(room);
   console.log(`Usuário ${socket.id} saiu da sala ${room}`);
 };
-
-interface User {
-  id: string;
-  name: string;
-  username: string;
+type UserWithotPassword = Omit<User, "password">;
+interface OnlineUser extends UserWithotPassword {
+  socketId: string;
 }
 
+const onlineUsers: OnlineUser[] = [];
+
 io.on("connection", (socket) => {
-  console.log(`Usuário: ${socket.id} conectado`);
   socket.on("disconnect", () => {
-    console.log(`Usuário: ${socket.id} saiu`);
+    const userIndex = onlineUsers.findIndex(
+      ({ socketId }) => socketId === socket.id
+    );
+    onlineUsers.splice(userIndex, 1);
+    io.emit("get_users", onlineUsers);
+  });
+  socket.on("turn_online", (user: UserWithotPassword) => {
+    if (!onlineUsers.some(({ id }) => user.id === id)) {
+      onlineUsers.push({ ...user, socketId: socket.id });
+    }
+    io.emit("get_users", onlineUsers);
   });
   socket.on(
     "select_room",
