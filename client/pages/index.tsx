@@ -8,6 +8,9 @@ import { Room } from "@/models/Room";
 import { RoomCard } from "@/components/Room/RoomCard";
 import { useForm } from "react-hook-form";
 import { ChatBubble } from "@/components/Chat/ChatBubble";
+import Tabs from "@/components/Common/Tabs";
+import { User } from "@/models/User";
+import { UserCard } from "@/components/User/UserCard";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,7 +34,36 @@ export default function Home({ rooms, currentUser }: Props) {
   const [selectedRoom, setSelectedRoom] = useState<Room>();
   const [users, setUsers] = useState<OnlineUser[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const socketRef = useRef(socket);
+  const tabs = [
+    {
+      title: "Salas",
+      content: (
+        <div className="flex flex-col gap-5 overflow-y-auto">
+          {rooms.map((room) => (
+            <RoomCard
+              key={room.id}
+              room={room}
+              onClick={() => setSelectedRoom(room)}
+            />
+          ))}
+        </div>
+      ),
+    },
+    {
+      title: "Usuários",
+      content: (
+        <div className="flex flex-col gap-5 overflow-y-auto">
+          {users.map((user) => (
+            <UserCard
+              key={user.id}
+              user={user}
+              onClick={() => setSelectedRoom(user)}
+            />
+          ))}
+        </div>
+      ),
+    },
+  ];
 
   const { register, setValue, handleSubmit, resetField } = useForm<Message>({
     defaultValues: {
@@ -76,13 +108,7 @@ export default function Home({ rooms, currentUser }: Props) {
   return (
     <main className={`flex p-5 gap-5 h-screen ${inter.className}`}>
       <div className="flex flex-col gap-5 w-1/2 max-h-screen">
-        {rooms.map((room) => (
-          <RoomCard
-            key={room.id}
-            room={room}
-            onClick={() => setSelectedRoom(room)}
-          />
-        ))}
+        <Tabs tabs={tabs} />
       </div>
       <div
         className={`flex flex-wrap w-full h-full px-5 py-5 rounded-lg ${
