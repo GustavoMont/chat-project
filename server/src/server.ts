@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import userRoute from "./routes/users";
-import passport from "passport";
+import passport, { use } from "passport";
 import cors from "cors";
 import roomsRoute from "./routes/rooms";
 import { Message } from "./models/Message";
@@ -33,26 +33,26 @@ const onLeaveRoom = (room: string, socket: Socket) => {
   socket.leave(room);
   console.log(`Usuário ${socket.id} saiu da sala ${room}`);
 };
-type UserWithotPassword = Omit<User, "password">;
-interface OnlineUser extends UserWithotPassword {
-  socketId: string;
+type UserWithotPassword = Omit<User, "password"> & { socketId: string };
+
+interface OnlineUsers {
+  [key: string]: UserWithotPassword;
 }
 
-const onlineUsers: OnlineUser[] = [];
+const onlineUsers: OnlineUsers = {};
 
 io.on("connection", (socket) => {
   socket.on("disconnect", () => {
-    const userIndex = onlineUsers.findIndex(
-      ({ socketId }) => socketId === socket.id
+    const user = Object.values(onlineUsers).find(
+      (user) => user.socketId === socket.id
     );
-    onlineUsers.splice(userIndex, 1);
-    io.emit("get_users", onlineUsers);
+    if (user) {
+      delete onlineUsers[user.id];
+    }
   });
   socket.on("turn_online", (user: UserWithotPassword) => {
-    if (!onlineUsers.some(({ id }) => user.id === id)) {
-      onlineUsers.push({ ...user, socketId: socket.id });
-    }
-    io.emit("get_users", onlineUsers);
+    onlineUsers[user.id] = { ...user, socketId: socket.id };
+    io.emit("get_users", Object.values(onlineUsers));
   });
   socket.on(
     "select_room",
@@ -66,14 +66,14 @@ io.on("connection", (socket) => {
   socket.on("leave", () => {
     socket.rooms.forEach((room) => onLeaveRoom(room, socket));
   });
-  socket.on("message", async (message: Message) => {
+  socket.on("message_room", async (message: Message) => {
     const messageDoc = await addDoc(messagesRef, {
       userId: message.user.id,
       text: message.text,
       date: new Date(),
       targetId: message.targetId,
     });
-    io.to(message.targetId).emit("message", {
+    io.to(message.targetId).emit("message_room", {
       id: messageDoc.id,
       ...message,
     });

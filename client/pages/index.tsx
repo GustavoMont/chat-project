@@ -23,8 +23,13 @@ interface Props {
   currentUser: User;
 }
 
+interface OnlineUser extends User {
+  socketId: string;
+}
+
 export default function Home({ rooms, currentUser }: Props) {
   const [selectedRoom, setSelectedRoom] = useState<Room>();
+  const [users, setUsers] = useState<OnlineUser[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const socketRef = useRef(socket);
 
@@ -35,24 +40,24 @@ export default function Home({ rooms, currentUser }: Props) {
   });
 
   const sendMessage = (message: Message) => {
-    socket.emit("message", message);
+    socket.emit("message_room", message);
     resetField("text");
   };
 
   useEffect(() => {
-    socketRef.current.connect();
-    socketRef.current.emit("turn_online", currentUser);
-    socketRef.current.on("message", (newMessage: Message) => {
+    socket.connect();
+    socket.emit("turn_online", currentUser);
+    socket.on("message_room", (newMessage: Message) => {
       setMessages((messages) => [...messages, newMessage]);
     });
-    socketRef.current.on("get_users", (users) => {
-      console.log(users);
+    socket.on("get_users", (users) => {
+      setUsers(users);
     });
 
     return () => {
-      socketRef.current.disconnect();
-      socketRef.current.emit("leave");
-      socketRef.current.off("message");
+      socket.disconnect();
+      socket.emit("leave");
+      socket.off("message_room");
     };
   }, []);
 
