@@ -5,12 +5,12 @@ import { GetServerSideProps } from "next";
 import { getToken } from "@/services/auth";
 import { serverSideAPi } from "@/services/api";
 import { Room } from "@/models/Room";
-import { RoomCard } from "@/components/Room/RoomCard";
 import { useForm } from "react-hook-form";
 import { ChatBubble } from "@/components/Chat/ChatBubble";
 import Tabs from "@/components/Common/Tabs";
 import { User } from "@/models/User";
-import { UserCard } from "@/components/User/UserCard";
+import { UsersList } from "@/components/User/UsersList";
+import { RoomsList } from "@/components/Room/RoomsList";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -38,29 +38,13 @@ export default function Home({ rooms, currentUser }: Props) {
     {
       title: "Salas",
       content: (
-        <div className="flex flex-col gap-5 overflow-y-auto">
-          {rooms.map((room) => (
-            <RoomCard
-              key={room.id}
-              room={room}
-              onClick={() => setSelectedRoom(room)}
-            />
-          ))}
-        </div>
+        <RoomsList rooms={rooms} onSelect={(room) => setSelectedRoom(room)} />
       ),
     },
     {
       title: "Usuários",
       content: (
-        <div className="flex flex-col gap-5 overflow-y-auto">
-          {users.map((user) => (
-            <UserCard
-              key={user.id}
-              user={user}
-              onClick={() => setSelectedRoom(user)}
-            />
-          ))}
-        </div>
+        <UsersList users={users} onSelect={(user) => setSelectedRoom(user)} />
       ),
     },
   ];
