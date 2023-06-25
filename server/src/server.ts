@@ -7,7 +7,12 @@ import cors from "cors";
 import roomsRoute from "./routes/rooms";
 import { Message } from "./models/Message";
 import { addDoc } from "firebase/firestore";
-import { getRoomMessages, messagesRef } from "./services/message-services";
+import {
+  addMessage,
+  getPrivateMessage,
+  getRoomMessages,
+  messagesRef,
+} from "./services/message-services";
 import { User } from "./models/User";
 
 const app = express();
@@ -67,25 +72,26 @@ io.on("connection", (socket) => {
       callback(messages);
     }
   );
+  socket.on(
+    "select_user",
+    async (targetId: string, callback: (...args: any[]) => void) => {
+      const userId = socket.handshake.auth.id;
+      const messages = await getPrivateMessage(userId, targetId);
+      callback(messages);
+    }
+  );
   socket.on("leave", () => {
     socket.rooms.forEach((room) => onLeaveRoom(room, socket));
   });
   socket.on("message_room", async (message: Message) => {
-    const messageDoc = await addDoc(messagesRef, {
-      userId: message.user.id,
-      text: message.text,
-      date: new Date(),
-      targetId: message.targetId,
-    });
-    io.to(message.targetId).emit("message_room", {
-      id: messageDoc.id,
-      ...message,
-    });
+    const newMessage = await addMessage(message);
+    io.to(message.targetId).emit("message_room", newMessage);
   });
-  socket.on("private_message", (message: Message) => {
+  socket.on("private_message", async (message: Message) => {
     const target = onlineUsers[message.targetId];
+    const newMessage = await addMessage(message);
     if (target) {
-      io.to([target.socketId, socket.id]).emit("private_message", message);
+      io.to([target.socketId, socket.id]).emit("private_message", newMessage);
     }
   });
 });

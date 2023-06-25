@@ -90,6 +90,7 @@ export default function Home({ rooms, currentUser }: Props) {
     const getPrivateMessge = (newMessage: Message) => {
       setMessages((oldMessages) => [...oldMessages, newMessage]);
     };
+    socket.auth = { id: currentUser.id };
     socket.connect();
     socket.emit("turn_online", currentUser);
 
@@ -108,7 +109,8 @@ export default function Home({ rooms, currentUser }: Props) {
   useEffect(() => {
     setMessages([]);
     if (target) {
-      socket.emit("select_room", target.id, (messages: Message[]) => {
+      const eventName = target.type === "room" ? "select_room" : "select_user";
+      socket.emit(eventName, target.id, (messages: Message[]) => {
         setMessages(messages);
       });
       setValue("targetId", target.id);
