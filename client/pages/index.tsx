@@ -11,15 +11,9 @@ import Tabs from "@/components/Common/Tabs";
 import { User } from "@/models/User";
 import { UsersList } from "@/components/User/UsersList";
 import { RoomsList } from "@/components/Room/RoomsList";
+import { Message } from "postcss";
 
 const inter = Inter({ subsets: ["latin"] });
-
-interface Message {
-  text: string;
-  targetId: string;
-  date: Date;
-  user: User;
-}
 
 interface Props {
   rooms: Room[];
@@ -44,7 +38,11 @@ export default function Home({ rooms, currentUser }: Props) {
     {
       title: "Usuários",
       content: (
-        <UsersList users={users} onSelect={(user) => setSelectedRoom(user)} />
+        <UsersList
+          currentUser={currentUser}
+          users={users}
+          onSelect={(user) => setSelectedRoom(user)}
+        />
       ),
     },
   ];
@@ -61,19 +59,22 @@ export default function Home({ rooms, currentUser }: Props) {
   };
 
   useEffect(() => {
+    const getRoomMessages = (newMessage: Message) => {
+      setMessages((messages) => [...messages, newMessage]);
+    };
+    const getOnlineUsers = (users: OnlineUser[]) => {
+      setUsers(users);
+    };
     socket.connect();
     socket.emit("turn_online", currentUser);
-    socket.on("message_room", (newMessage: Message) => {
-      setMessages((messages) => [...messages, newMessage]);
-    });
-    socket.on("get_users", (users) => {
-      setUsers(users);
-    });
+
+    socket.on("message_room", getRoomMessages);
+    socket.on("get_users", getOnlineUsers);
 
     return () => {
       socket.disconnect();
-      socket.emit("leave");
-      socket.off("message_room");
+      socket.off("message_room", getRoomMessages);
+      socket.off("get_users", getOnlineUsers);
     };
   }, []);
 
