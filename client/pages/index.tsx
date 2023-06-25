@@ -12,6 +12,8 @@ import { User } from "@/models/User";
 import { UsersList } from "@/components/User/UsersList";
 import { RoomsList } from "@/components/Room/RoomsList";
 import { Message } from "postcss";
+import { Target } from "@/models/Target";
+import { ChatContainer } from "@/components/Chat/ChatContainer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,11 +27,6 @@ interface OnlineUser extends User {
 }
 
 export default function Home({ rooms, currentUser }: Props) {
-  interface Target {
-    id: string;
-    name: string;
-    type: "user" | "room";
-  }
   const [target, setTarget] = useState<Target>();
   const [users, setUsers] = useState<OnlineUser[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -67,19 +64,6 @@ export default function Home({ rooms, currentUser }: Props) {
     },
   ];
 
-  const { register, setValue, handleSubmit, resetField } = useForm<Message>({
-    defaultValues: {
-      user: currentUser,
-    },
-  });
-
-  const sendMessage = (message: Message) => {
-    const eventName =
-      target?.type === "room" ? "message_room" : "private_message";
-    socket.emit(eventName, message);
-    resetField("text");
-  };
-
   useEffect(() => {
     const getRoomMessages = (newMessage: Message) => {
       setMessages((messages) => [...messages, newMessage]);
@@ -113,7 +97,6 @@ export default function Home({ rooms, currentUser }: Props) {
       socket.emit(eventName, target.id, (messages: Message[]) => {
         setMessages(messages);
       });
-      setValue("targetId", target.id);
     } else {
       socket.emit("leave");
     }
@@ -130,45 +113,12 @@ export default function Home({ rooms, currentUser }: Props) {
         }`}
       >
         {target ? (
-          <>
-            <div className="flex flex-col gap-5 w-full">
-              <div className="navbar bg-slate-950 text-white rounded-lg">
-                <a className="btn btn-ghost normal-case text-xl">
-                  {target.name}
-                </a>
-                <button
-                  className="btn text-white btn-error ml-auto"
-                  onClick={() => setTarget(undefined)}
-                >
-                  Sair
-                </button>
-              </div>
-              {messages.map((message, i) => (
-                <ChatBubble
-                  text={message.text}
-                  user={message.user}
-                  key={i}
-                  position={
-                    message.user.id === currentUser.id ? "end" : "start"
-                  }
-                />
-              ))}
-            </div>
-            <form
-              onSubmit={handleSubmit(sendMessage)}
-              className="self-end px-5 w-full flex gap-3"
-            >
-              <input
-                type="text"
-                placeholder="Type here"
-                className="input input-bordered input-accent w-full "
-                {...register("text")}
-              />
-              <button type="submit" className="btn btn-secondary text-white">
-                Enviar
-              </button>
-            </form>
-          </>
+          <ChatContainer
+            currentUser={currentUser}
+            messages={messages}
+            onGetOut={() => setTarget(undefined)}
+            target={target}
+          />
         ) : (
           <button className="btn btn-primary" disabled>
             <h2 className="text-center text-lg font-bold text-slate-800">
