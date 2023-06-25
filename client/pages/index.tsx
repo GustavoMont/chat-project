@@ -54,7 +54,7 @@ export default function Home({ rooms, currentUser }: Props) {
   });
 
   const sendMessage = (message: Message) => {
-    socket.emit("message_room", message);
+    socket.emit("private_message", message);
     resetField("text");
   };
 
@@ -65,15 +65,20 @@ export default function Home({ rooms, currentUser }: Props) {
     const getOnlineUsers = (users: OnlineUser[]) => {
       setUsers(users);
     };
+    const getPrivateMessge = (newMessage: Message) => {
+      console.log(newMessage);
+    };
     socket.connect();
     socket.emit("turn_online", currentUser);
 
     socket.on("message_room", getRoomMessages);
     socket.on("get_users", getOnlineUsers);
+    socket.on("private_message", getPrivateMessge);
 
     return () => {
       socket.disconnect();
       socket.off("message_room", getRoomMessages);
+      socket.off("private_message", getPrivateMessge);
       socket.off("get_users", getOnlineUsers);
     };
   }, []);
@@ -95,6 +100,7 @@ export default function Home({ rooms, currentUser }: Props) {
       <div className="flex flex-col gap-5 w-1/2 max-h-screen">
         <Tabs tabs={tabs} />
       </div>
+      {socket.id}
       <div
         className={`flex flex-wrap w-full h-full px-5 py-5 rounded-lg ${
           selectedRoom ? "" : "justify-center items-center"

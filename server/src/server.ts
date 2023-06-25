@@ -30,6 +30,9 @@ const io = new Server(server, {
 });
 
 const onLeaveRoom = (room: string, socket: Socket) => {
+  if (room === socket.id) {
+    return;
+  }
   socket.leave(room);
   console.log(`Usuário ${socket.id} saiu da sala ${room}`);
 };
@@ -48,6 +51,7 @@ io.on("connection", (socket) => {
     );
     if (user) {
       delete onlineUsers[user.id];
+      io.emit("get_users", Object.values(onlineUsers));
     }
   });
   socket.on("turn_online", (user: UserWithotPassword) => {
@@ -57,7 +61,7 @@ io.on("connection", (socket) => {
   socket.on(
     "select_room",
     async (roomId: string, callback: (messages: unknown) => {}) => {
-      socket.rooms.forEach((room) => onLeaveRoom(room, socket));
+      // socket.rooms.forEach((room) => onLeaveRoom(room, socket));
       socket.join(roomId);
       const messages = await getRoomMessages(roomId);
       callback(messages);
@@ -77,6 +81,12 @@ io.on("connection", (socket) => {
       id: messageDoc.id,
       ...message,
     });
+  });
+  socket.on("private_message", (message: Message) => {
+    const target = onlineUsers[message.targetId];
+    if (target) {
+      io.to(target.socketId).emit("private_message", "AAAAAAAAAAAA");
+    }
   });
 });
 
