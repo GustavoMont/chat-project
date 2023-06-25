@@ -61,7 +61,7 @@ io.on("connection", (socket) => {
   socket.on(
     "select_room",
     async (roomId: string, callback: (messages: unknown) => {}) => {
-      // socket.rooms.forEach((room) => onLeaveRoom(room, socket));
+      socket.rooms.forEach((room) => onLeaveRoom(room, socket));
       socket.join(roomId);
       const messages = await getRoomMessages(roomId);
       callback(messages);
@@ -85,7 +85,7 @@ io.on("connection", (socket) => {
   socket.on("private_message", (message: Message) => {
     const target = onlineUsers[message.targetId];
     if (target) {
-      io.to(target.socketId).emit("private_message", "AAAAAAAAAAAA");
+      io.to([target.socketId, socket.id]).emit("private_message", message);
     }
   });
 });

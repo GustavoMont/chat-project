@@ -25,14 +25,28 @@ interface OnlineUser extends User {
 }
 
 export default function Home({ rooms, currentUser }: Props) {
-  const [selectedRoom, setSelectedRoom] = useState<Room>();
+  interface Target {
+    id: string;
+    name: string;
+    type: "user" | "room";
+  }
+  const [target, setTarget] = useState<Target>();
   const [users, setUsers] = useState<OnlineUser[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const tabs = [
     {
       title: "Salas",
       content: (
-        <RoomsList rooms={rooms} onSelect={(room) => setSelectedRoom(room)} />
+        <RoomsList
+          rooms={rooms}
+          onSelect={({ id, name }) =>
+            setTarget({
+              id,
+              name,
+              type: "room",
+            })
+          }
+        />
       ),
     },
     {
@@ -41,7 +55,13 @@ export default function Home({ rooms, currentUser }: Props) {
         <UsersList
           currentUser={currentUser}
           users={users}
-          onSelect={(user) => setSelectedRoom(user)}
+          onSelect={({ id, name }) =>
+            setTarget({
+              id,
+              name,
+              type: "user",
+            })
+          }
         />
       ),
     },
@@ -54,7 +74,9 @@ export default function Home({ rooms, currentUser }: Props) {
   });
 
   const sendMessage = (message: Message) => {
-    socket.emit("private_message", message);
+    const eventName =
+      target?.type === "room" ? "message_room" : "private_message";
+    socket.emit(eventName, message);
     resetField("text");
   };
 
@@ -66,7 +88,7 @@ export default function Home({ rooms, currentUser }: Props) {
       setUsers(users);
     };
     const getPrivateMessge = (newMessage: Message) => {
-      console.log(newMessage);
+      setMessages((oldMessages) => [...oldMessages, newMessage]);
     };
     socket.connect();
     socket.emit("turn_online", currentUser);
@@ -84,38 +106,37 @@ export default function Home({ rooms, currentUser }: Props) {
   }, []);
 
   useEffect(() => {
-    if (selectedRoom) {
-      socket.emit("select_room", selectedRoom.id, (messages: Message[]) => {
+    setMessages([]);
+    if (target) {
+      socket.emit("select_room", target.id, (messages: Message[]) => {
         setMessages(messages);
       });
-      setValue("targetId", selectedRoom.id);
+      setValue("targetId", target.id);
     } else {
       socket.emit("leave");
     }
-    setMessages([]);
-  }, [selectedRoom]);
+  }, [target]);
 
   return (
     <main className={`flex p-5 gap-5 h-screen ${inter.className}`}>
       <div className="flex flex-col gap-5 w-1/2 max-h-screen">
         <Tabs tabs={tabs} />
       </div>
-      {socket.id}
       <div
         className={`flex flex-wrap w-full h-full px-5 py-5 rounded-lg ${
-          selectedRoom ? "" : "justify-center items-center"
+          target ? "" : "justify-center items-center"
         }`}
       >
-        {selectedRoom ? (
+        {target ? (
           <>
             <div className="flex flex-col gap-5 w-full">
               <div className="navbar bg-slate-950 text-white rounded-lg">
                 <a className="btn btn-ghost normal-case text-xl">
-                  {selectedRoom.name}
+                  {target.name}
                 </a>
                 <button
                   className="btn text-white btn-error ml-auto"
-                  onClick={() => setSelectedRoom(undefined)}
+                  onClick={() => setTarget(undefined)}
                 >
                   Sair
                 </button>
