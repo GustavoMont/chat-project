@@ -14,6 +14,7 @@ import { RoomsList } from "@/components/Room/RoomsList";
 import { Message } from "postcss";
 import { Target } from "@/models/Target";
 import { ChatContainer } from "@/components/Chat/ChatContainer";
+import { Avatar } from "@/components/User/Avatar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -105,10 +106,16 @@ export default function Home({ rooms, currentUser }: Props) {
   return (
     <main className={`flex p-5 gap-5 h-screen ${inter.className}`}>
       <div className="flex flex-col gap-5 w-1/2 max-h-screen">
+        <div className="navbar bg-slate-950 text-white rounded-lg px-5">
+          <div className="flex gap-5 items-center">
+            <Avatar name={currentUser.name} avatar={currentUser.avatar} />
+            <span className="font-bold">{currentUser.name}</span>
+          </div>
+        </div>
         <Tabs tabs={tabs} />
       </div>
       <div
-        className={`flex flex-wrap w-full h-full px-5 py-5 rounded-lg ${
+        className={`flex flex-wrap w-full h-full px-5 rounded-lg ${
           target ? "" : "justify-center items-center"
         }`}
       >
