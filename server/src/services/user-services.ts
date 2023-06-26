@@ -25,11 +25,13 @@ export const getUserByUsername = async (username: string) => {
   return user;
 };
 
+export const getUserDoc = (id: string) => doc(db, "users", id);
+
 export const getUserById = async (
   id: string,
   getPassword: boolean = false
 ): Promise<User> => {
-  const userDoc = await getDoc(doc(db, "users", id));
+  const userDoc = await getDoc(getUserDoc(id));
   const userData = userDoc.data() as User;
 
   if (!getPassword && userData) {
