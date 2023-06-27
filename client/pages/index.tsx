@@ -3,10 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { socket } from "@/services/socket";
 import { GetServerSideProps } from "next";
 import { getToken } from "@/services/auth";
-import { serverSideAPi } from "@/services/api";
+import { api, serverSideAPi } from "@/services/api";
 import { Room } from "@/models/Room";
-import { useForm } from "react-hook-form";
-import { ChatBubble } from "@/components/Chat/ChatBubble";
 import Tabs from "@/components/Common/Tabs";
 import { User } from "@/models/User";
 import { UsersList } from "@/components/User/UsersList";
@@ -15,6 +13,8 @@ import { Message } from "postcss";
 import { Target } from "@/models/Target";
 import { ChatContainer } from "@/components/Chat/ChatContainer";
 import { Avatar } from "@/components/User/Avatar";
+import { Modal } from "@/components/Common/Modal";
+import { useForm } from "react-hook-form";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,6 +31,36 @@ export default function Home({ rooms, currentUser }: Props) {
   const [target, setTarget] = useState<Target>();
   const [users, setUsers] = useState<OnlineUser[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [openModal, setOpenModal] = useState(false);
+  const [user, setUser] = useState<User>(currentUser);
+  interface UpdateUser {
+    name: string;
+    avatar?: FileList;
+  }
+  const { register, handleSubmit } = useForm<UpdateUser>({
+    defaultValues: {
+      name: user.name,
+    },
+  });
+  const closeModal = () => setOpenModal(false);
+  const updateUser = async (data: UpdateUser) => {
+    const avatar = data.avatar?.item(0);
+    const { data: updatedUser } = await api.patch<User>(
+      `users/${user.id}`,
+      {
+        ...data,
+        avatar,
+      },
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Accept: "application/json",
+        },
+      }
+    );
+    setUser(updatedUser);
+    closeModal();
+  };
   const tabs = [
     {
       title: "Salas",
@@ -51,7 +81,7 @@ export default function Home({ rooms, currentUser }: Props) {
       title: "Usuários",
       content: (
         <UsersList
-          currentUser={currentUser}
+          currentUser={user}
           users={users}
           onSelect={({ id, name }) =>
             setTarget({
@@ -75,9 +105,9 @@ export default function Home({ rooms, currentUser }: Props) {
     const getPrivateMessge = (newMessage: Message) => {
       setMessages((oldMessages) => [...oldMessages, newMessage]);
     };
-    socket.auth = { id: currentUser.id };
+    socket.auth = { id: user.id };
     socket.connect();
-    socket.emit("turn_online", currentUser);
+    socket.emit("turn_online", user);
 
     socket.on("message_room", getRoomMessages);
     socket.on("get_users", getOnlineUsers);
@@ -108,8 +138,13 @@ export default function Home({ rooms, currentUser }: Props) {
       <div className="flex flex-col gap-5 w-1/2 max-h-screen">
         <div className="navbar bg-slate-950 text-white rounded-lg px-5">
           <div className="flex gap-5 items-center">
-            <Avatar name={currentUser.name} avatar={currentUser.avatar} />
-            <span className="font-bold">{currentUser.name}</span>
+            <div
+              onClick={() => setOpenModal(true)}
+              className="active:scale-90 cursor-pointer hover:opacity-80"
+            >
+              <Avatar name={user.name} avatar={user.avatar} />
+            </div>
+            <span className="font-bold">{user.name}</span>
           </div>
         </div>
         <Tabs tabs={tabs} />
@@ -121,7 +156,7 @@ export default function Home({ rooms, currentUser }: Props) {
       >
         {target ? (
           <ChatContainer
-            currentUser={currentUser}
+            currentUser={user}
             messages={messages}
             onGetOut={() => setTarget(undefined)}
             target={target}
@@ -134,6 +169,46 @@ export default function Home({ rooms, currentUser }: Props) {
           </button>
         )}
       </div>
+      <Modal active={openModal} title="Alterar informações">
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={handleSubmit(updateUser)}
+        >
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 tracking-wide">
+              Nome:
+            </label>
+            <input
+              className=" w-full text-base px-4 py-2 border  border-gray-300 rounded-lg focus:outline-none focus:border-orange-400"
+              type="text"
+              placeholder="Nome"
+              {...register("name")}
+            />
+          </div>
+          <div className="form-control w-full ">
+            <label className="label">
+              <span className="label-text">Foto</span>
+            </label>
+            <input
+              {...register("avatar")}
+              type="file"
+              className="file-input file-input-bordered w-full"
+            />
+          </div>
+          <div className="flex gap-5 items-center justify-center mt-5 ">
+            <button
+              type="reset"
+              onClick={closeModal}
+              className="btn btn-neutral w-2/5"
+            >
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-primary w-2/5">
+              Atualizar
+            </button>
+          </div>
+        </form>
+      </Modal>
     </main>
   );
 }
