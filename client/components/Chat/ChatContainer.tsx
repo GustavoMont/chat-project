@@ -1,10 +1,10 @@
-import { Message } from "postcss";
 import React, { useEffect } from "react";
 import { ChatBubble } from "./ChatBubble";
 import { useForm } from "react-hook-form";
 import { socket } from "@/services/socket";
 import { Target } from "@/models/Target";
 import { User } from "@/models/User";
+import { Message } from "@/models/Message";
 
 interface Props {
   messages: Message[];
@@ -53,7 +53,7 @@ export const ChatContainer: React.FC<Props> = ({
             <ChatBubble
               text={message.text}
               user={message.user}
-              key={i}
+              key={message.id}
               position={message.user.id === currentUser.id ? "end" : "start"}
             />
           ))}

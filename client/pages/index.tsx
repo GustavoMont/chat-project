@@ -9,12 +9,12 @@ import Tabs from "@/components/Common/Tabs";
 import { User } from "@/models/User";
 import { UsersList } from "@/components/User/UsersList";
 import { RoomsList } from "@/components/Room/RoomsList";
-import { Message } from "postcss";
 import { Target } from "@/models/Target";
 import { ChatContainer } from "@/components/Chat/ChatContainer";
 import { Avatar } from "@/components/User/Avatar";
 import { Modal } from "@/components/Common/Modal";
 import { useForm } from "react-hook-form";
+import { Message } from "@/models/Message";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -96,6 +96,10 @@ export default function Home({ rooms, currentUser }: Props) {
   ];
 
   useEffect(() => {
+    Notification.requestPermission();
+  }, []);
+
+  useEffect(() => {
     const getRoomMessages = (newMessage: Message) => {
       setMessages((messages) => [...messages, newMessage]);
     };
@@ -103,7 +107,21 @@ export default function Home({ rooms, currentUser }: Props) {
       setUsers(users);
     };
     const getPrivateMessge = (newMessage: Message) => {
-      setMessages((oldMessages) => [...oldMessages, newMessage]);
+      const shouldNotificate = newMessage.user.id !== target?.id;
+      const isUserMessage = newMessage.user.id === user.id;
+      if (target?.type === "room") {
+        return;
+      }
+      if (isUserMessage || !shouldNotificate) {
+        setMessages((oldMessages) => [...oldMessages, newMessage]);
+      } else {
+        if (Notification.permission === "granted") {
+          new Notification(`Mensagem de ${newMessage.user.name}`, {
+            body: newMessage.text,
+            icon: newMessage.user.avatar,
+          });
+        }
+      }
     };
     socket.auth = { id: user.id };
     socket.connect();
