@@ -101,26 +101,27 @@ export default function Home({ rooms, currentUser }: Props) {
 
   useEffect(() => {
     const getRoomMessages = (newMessage: Message) => {
-      setMessages((messages) => [...messages, newMessage]);
+      if (newMessage.targetId !== socket.id) {
+        setMessages((messages) => [...messages, newMessage]);
+      }
     };
     const getOnlineUsers = (users: OnlineUser[]) => {
       setUsers(users);
     };
     const getPrivateMessge = (newMessage: Message) => {
-      const shouldNotificate = newMessage.user.id !== target?.id;
-      const isUserMessage = newMessage.user.id === user.id;
-      if (target?.type === "room") {
-        return;
-      }
-      if (isUserMessage || !shouldNotificate) {
-        setMessages((oldMessages) => [...oldMessages, newMessage]);
-      } else {
+      const isSendFromTarget = newMessage.user.id === target?.id;
+
+      const isMessageFromUser = newMessage.user.id === user.id;
+      const shouldNotificate = !isSendFromTarget && !isMessageFromUser;
+      if (shouldNotificate) {
         if (Notification.permission === "granted") {
           new Notification(`Mensagem de ${newMessage.user.name}`, {
             body: newMessage.text,
             icon: newMessage.user.avatar,
           });
         }
+      } else {
+        setMessages((oldMessages) => [...oldMessages, newMessage]);
       }
     };
     socket.auth = { id: user.id };
@@ -137,7 +138,7 @@ export default function Home({ rooms, currentUser }: Props) {
       socket.off("private_message", getPrivateMessge);
       socket.off("get_users", getOnlineUsers);
     };
-  }, []);
+  }, [target]);
 
   useEffect(() => {
     setMessages([]);
